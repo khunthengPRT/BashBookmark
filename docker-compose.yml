@@ -1,0 +1,79 @@
+# BashBookmark — Docker Compose
+#
+# Tested on Windows 11 with Docker Desktop (Linux containers mode).
+# Requires Docker Desktop >= 4.x with WSL 2 backend enabled.
+#
+# Quick start:
+#   cp .env.docker .env
+#   # Set APP_PASSWORD (and optionally APP_KEY) inside .env
+#   docker compose up -d --build
+#   open http://localhost:8080
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Force Linux image — required when building on Windows/macOS ARM hosts
+      args:
+        BUILDPLATFORM: linux/amd64
+    image: bashbookmark:latest
+    container_name: bashbookmark
+    restart: unless-stopped
+
+    ports:
+      # Host port 8080 → container port 80 (Nginx)
+      # Change the left side if 8080 is already in use on your machine.
+      - "8080:80"
+
+    # Load user-supplied secrets from .env, then override infra settings below.
+    # Only APP_KEY and APP_PASSWORD need to be set in the .env file.
+    env_file:
+      - .env
+    environment:
+      APP_NAME: BashBookmark
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:8080
+
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: error
+
+      # SQLite — file lives inside the named volume
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+
+      # Use file-based drivers — no Redis/Memcached required
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+
+    volumes:
+      # SQLite database — persisted across container rebuilds
+      - sqlite_data:/var/www/html/database
+
+      # User-uploaded files and framework cache
+      - storage_app:/var/www/html/storage/app
+      - storage_logs:/var/www/html/storage/logs
+      - storage_framework:/var/www/html/storage/framework
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# ---------------------------------------------------------------------------
+# Named volumes — managed by Docker Desktop; data survives container restarts
+# and image rebuilds. To reset all data: docker compose down -v
+# ---------------------------------------------------------------------------
+volumes:
+  sqlite_data:
+    driver: local
+  storage_app:
+    driver: local
+  storage_logs:
+    driver: local
+  storage_framework:
+    driver: local

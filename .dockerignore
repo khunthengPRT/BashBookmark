@@ -1,0 +1,36 @@
+# Git
+.git
+.github
+.gitattributes
+.gitignore
+
+# Dependencies — rebuilt inside the image
+node_modules
+vendor
+
+# Laravel generated / writable directories
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+
+# Compiled frontend assets — built inside the Docker image
+public/build
+public/hot
+
+# Local environment files — never bake secrets into the image
+.env
+.env.local
+.env.*.local
+
+# Dev/test tooling
+phpunit.xml
+.editorconfig
+
+# Documentation
+*.md
+
+# macOS / Windows artifacts
+.DS_Store
+Thumbs.db
